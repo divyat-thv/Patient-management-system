@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dashboard — Ayushman Patient Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title" id="topbarTitle">Ayushman</span>
+    </div>
+    <span class="topbar-user" id="topbarUser"></span>
+  </header>
+
+  <!-- DRAWER OVERLAY -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <!-- DRAWER NAV -->
+  <nav class="drawer" id="drawerNav"></nav>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 id="welcomeMsg">Good morning 🌿</h1>
+      <p id="todayDate"></p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card green">
+        <span class="stat-label">Total Patients</span>
+        <span class="stat-value" id="statTotal">0</span>
+        <span class="stat-sub">Registered in system</span>
+      </div>
+      <div class="stat-card teal">
+        <span class="stat-label">Today's Registrations</span>
+        <span class="stat-value" id="statToday">0</span>
+        <span class="stat-sub">Added today</span>
+      </div>
+      <div class="stat-card blue">
+        <span class="stat-label">Male Patients</span>
+        <span class="stat-value" id="statMale">0</span>
+        <span class="stat-sub">Gender: Male</span>
+      </div>
+      <div class="stat-card amber">
+        <span class="stat-label">Female Patients</span>
+        <span class="stat-value" id="statFemale">0</span>
+        <span class="stat-sub">Gender: Female</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+      <div class="card-title"><span class="icon">⚡</span> Quick Actions</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="pages/add-patient.html" class="btn btn-primary">➕ Add New Patient</a>
+        <a href="pages/all-patients.html" class="btn btn-outline">👥 View All Patients</a>
+        <a href="pages/search-patient.html" class="btn btn-ghost">🔍 Search Patient</a>
+      </div>
+    </div>
+
+    <!-- Recent Patients -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><span class="icon">🕐</span> Recently Added Patients</span>
+        <a href="pages/all-patients.html" style="font-size:0.82rem;font-weight:600;color:var(--primary);">View all →</a>
+      </div>
+      <div id="recentList"></div>
+    </div>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/patients.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const user = Auth.requireAuth();
+    if (user) {
+      initNav('dashboard');
+
+      // Greeting
+      const h = new Date().getHours();
+      const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('welcomeMsg').textContent = `${greet}, ${user.name?.split(' ')[0] || 'Doctor'} 🌿`;
+      document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+      // Stats
+      const s = Patients.getStats();
+      document.getElementById('statTotal').textContent  = s.total;
+      document.getElementById('statToday').textContent  = s.today;
+      document.getElementById('statMale').textContent   = s.male;
+      document.getElementById('statFemale').textContent = s.female;
+
+      // Recent patients
+      const recent = Patients.getPatients().slice(0, 6);
+      const list   = document.getElementById('recentList');
+      if (!recent.length) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon">🌱</div><p>No patients yet. <a href="pages/add-patient.html" style="color:var(--primary);font-weight:600;">Add your first patient →</a></p></div>`;
+      } else {
+        list.innerHTML = `
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Patient ID</th><th>Name</th><th>Age / Gender</th>
+                <th>Mobile</th><th>Added On</th><th>Action</th>
+              </tr></thead>
+              <tbody>
+                ${recent.map(p => `
+                  <tr>
+                    <td><span class="badge badge-green">${escHtml(p.id)}</span></td>
+                    <td style="font-weight:600;">${escHtml(p.name)}</td>
+                    <td>${escHtml(p.age || '—')} / ${escHtml(p.gender || '—')}</td>
+                    <td>${escHtml(p.mobile || '—')}</td>
+                    <td style="color:var(--muted);font-size:0.82rem;">${new Date(p.createdAt).toLocaleDateString('en-IN')}</td>
+                    <td><a href="pages/patient-detail.html?id=${encodeURIComponent(p.id)}" class="btn btn-outline btn-sm">View</a></td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Add Patient — Ayushman Patient Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .section-divider {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.09em; color: var(--primary);
+      background: var(--primary-light); padding: 7px 14px;
+      border-radius: 6px; margin: 20px 0 14px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .radio-group { display: flex; gap: 14px; flex-wrap: wrap; }
+    .radio-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.9rem; cursor: pointer; font-weight: 500;
+    }
+    .radio-label input[type="radio"] { width: auto; padding: 0; accent-color: var(--primary); }
+    .char-count { font-size: 0.72rem; color: var(--muted); text-align: right; margin-top: 2px; }
+    .step-indicator {
+      display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap;
+    }
+    .step {
+      flex: 1; min-width: 100px; padding: 8px 10px; border-radius: 8px;
+      background: var(--border); color: var(--muted); font-size: 0.78rem;
+      font-weight: 600; text-align: center; transition: all 0.2s;
+    }
+    .step.active { background: var(--primary); color: #fff; }
+    .step.done   { background: var(--accent-light); color: #166534; }
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+    .nav-btns { display: flex; gap: 10px; justify-content: space-between; margin-top: 20px; }
+    .required-star { color: #dc2626; margin-left: 2px; }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger-btn" id="hamburgerBtn"><span></span><span></span><span></span></button>
+      <span class="topbar-title" id="topbarTitle">Ayushman</span>
+    </div>
+    <span class="topbar-user" id="topbarUser"></span>
+  </header>
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <nav class="drawer" id="drawerNav"></nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>➕ Add New Patient</h1>
+      <p>Fill in the patient details across all sections</p>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <div class="step active" id="step1">1. Personal</div>
+      <div class="step"        id="step2">2. Medical</div>
+      <div class="step"        id="step3">3. Complaints</div>
+      <div class="step"        id="step4">4. Treatment</div>
+    </div>
+
+    <div class="card" id="formCard">
+
+      <!-- SECTION 1: Personal Details -->
+      <div class="form-section active" id="sec1">
+        <div class="section-divider">👤 Personal Information</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Patient Name <span class="required-star">*</span></label>
+            <input type="text" id="name" placeholder="Full name" required>
+          </div>
+          <div class="form-group">
+            <label>Mobile Number <span class="required-star">*</span></label>
+            <input type="tel" id="mobile" placeholder="10-digit mobile" maxlength="10">
+          </div>
+          <div class="form-group">
+            <label>Age <span class="required-star">*</span></label>
+            <input type="number" id="age" placeholder="Years" min="0" max="120">
+          </div>
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" id="dob">
+          </div>
+          <div class="form-group">
+            <label>Gender <span class="required-star">*</span></label>
+            <div class="radio-group" style="margin-top:6px;">
+              <label class="radio-label"><input type="radio" name="gender" value="Male">   Male</label>
+              <label class="radio-label"><input type="radio" name="gender" value="Female"> Female</label>
+              <label class="radio-label"><input type="radio" name="gender" value="Other">  Other</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Marital Status</label>
+            <select id="marital">
+              <option value="">— Select —</option>
+              <option>Single</option><option>Married</option>
+              <option>Widowed</option><option>Divorced</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Occupation</label>
+            <input type="text" id="occupation" placeholder="e.g. Farmer, Teacher">
+          </div>
+          <div class="form-group">
+            <label>Religion / Community</label>
+            <input type="text" id="religion" placeholder="e.g. Hindu, Muslim">
+          </div>
+          <div class="form-group full">
+            <label>Address</label>
+            <textarea id="address" placeholder="House no., street, area…" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Village / Area</label>
+            <input type="text" id="village" placeholder="Village or locality">
+          </div>
+          <div class="form-group">
+            <label>District</label>
+            <input type="text" id="district" placeholder="District">
+          </div>
+          <div class="form-group">
+            <label>State</label>
+            <input type="text" id="state" placeholder="State" value="Telangana">
+          </div>
+          <div class="form-group">
+            <label>PIN Code</label>
+            <input type="text" id="pin" placeholder="6-digit PIN" maxlength="6">
+          </div>
+          <div class="form-group">
+            <label>Emergency Contact Name</label>
+            <input type="text" id="emergName" placeholder="Relative / Guardian name">
+          </div>
+          <div class="form-group">
+            <label>Emergency Contact Mobile</label>
+            <input type="tel" id="emergMobile" placeholder="10-digit number" maxlength="10">
+          </div>
+          <div class="form-group">
+            <label>Relation (Emergency)</label>
+            <input type="text" id="emergRelation" placeholder="e.g. Spouse, Father">
+          </div>
+          <div class="form-group">
+            <label>Referred By</label>
+            <input type="text" id="referredBy" placeholder="Doctor name or source">
+          </div>
+        </div>
+        <div class="nav-btns">
+          <span></span>
+          <button class="btn btn-primary" onclick="goStep(2)">Next: Medical Info →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Medical Details -->
+      <div class="form-section" id="sec2">
+        <div class="section-divider">🩺 Medical Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Blood Group</label>
+            <select id="bloodGroup">
+              <option value="">— Select —</option>
+              <option>A+</option><option>A-</option>
+              <option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option>
+              <option>O+</option><option>O-</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Height (cm)</label>
+            <input type="number" id="height" placeholder="e.g. 165" min="50" max="250">
+          </div>
+          <div class="form-group">
+            <label>Weight (kg)</label>
+            <input type="number" id="weight" placeholder="e.g. 68" min="1" max="300">
+          </div>
+          <div class="form-group">
+            <label>BMI</label>
+            <input type="text" id="bmi" placeholder="Auto-calculated" readonly style="background:#f3f3f3;">
+          </div>
+          <div class="form-group">
+            <label>Blood Pressure (mmHg)</label>
+            <input type="text" id="bp" placeholder="e.g. 120/80">
+          </div>
+          <div class="form-group">
+            <label>Pulse Rate (bpm)</label>
+            <input type="number" id="pulse" placeholder="e.g. 72" min="30" max="200">
+          </div>
+          <div class="form-group">
+            <label>Temperature (°F)</label>
+            <input type="number" id="temperature" placeholder="e.g. 98.6" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>SpO2 (%)</label>
+            <input type="number" id="spo2" placeholder="e.g. 98" min="50" max="100">
+          </div>
+          <div class="form-group">
+            <label>Random Blood Sugar (mg/dL)</label>
+            <input type="number" id="rbs" placeholder="e.g. 110">
+          </div>
+          <div class="form-group">
+            <label>Known Diabetes</label>
+            <select id="diabetes">
+              <option value="">— Select —</option>
+              <option>Yes</option><option>No</option><option>Suspected</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Known Hypertension</label>
+            <select id="htn">
+              <option value="">— Select —</option>
+              <option>Yes</option><option>No</option><option>Suspected</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Known Allergies</label>
+            <input type="text" id="allergies" placeholder="e.g. Pollen, Dust, Penicillin">
+          </div>
+          <div class="form-group full">
+            <label>Past Medical History</label>
+            <textarea id="pastHistory" placeholder="Previous illnesses, surgeries, hospitalisations…" rows="3"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Family History</label>
+            <textarea id="familyHistory" placeholder="Hereditary conditions in family…" rows="2"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Current Medications</label>
+            <textarea id="currentMeds" placeholder="Any allopathic / other medicines currently being taken…" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="section-divider">🌿 Ayurvedic Constitution (Prakriti)</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Prakriti (Body Constitution)</label>
+            <select id="prakriti">
+              <option value="">— Select —</option>
+              <option>Vata</option><option>Pitta</option><option>Kapha</option>
+              <option>Vata-Pitta</option><option>Pitta-Kapha</option>
+              <option>Vata-Kapha</option><option>Tridosha (equal)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Vikriti (Current Imbalance)</label>
+            <select id="vikriti">
+              <option value="">— Select —</option>
+              <option>Vata Aggravated</option><option>Pitta Aggravated</option>
+              <option>Kapha Aggravated</option><option>Vata-Pitta</option>
+              <option>Pitta-Kapha</option><option>Vata-Kapha</option><option>Tridosha</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Agni (Digestive Fire)</label>
+            <select id="agni">
+              <option value="">— Select —</option>
+              <option>Sama (balanced)</option><option>Vishama (irregular)</option>
+              <option>Tikshna (sharp)</option><option>Manda (sluggish)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Koshtha (Bowel Habit)</label>
+            <select id="koshtha">
+              <option value="">— Select —</option>
+              <option>Mridu (soft/easy)</option>
+              <option>Madhyama (moderate)</option>
+              <option>Krura (hard/difficult)</option>
+            </select>
+          </div>
+        </div>
+        <div class="nav-btns">
+          <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+          <button class="btn btn-primary" onclick="goStep(3)">Next: Complaints →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Chief Complaints & History -->
+      <div class="form-section" id="sec3">
+        <div class="section-divider">📋 Chief Complaints</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Chief Complaint(s) <span class="required-star">*</span></label>
+            <textarea id="chiefComplaint" placeholder="Main reason for visit, symptoms the patient reports…" rows="4"></textarea>
+            <div class="char-count" id="ccCount">0 / 500</div>
+          </div>
+          <div class="form-group">
+            <label>Duration of Complaints</label>
+            <input type="text" id="duration" placeholder="e.g. 3 days, 2 weeks, 6 months">
+          </div>
+          <div class="form-group">
+            <label>Onset</label>
+            <select id="onset">
+              <option value="">— Select —</option>
+              <option>Sudden</option><option>Gradual</option><option>Insidious</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>History of Present Illness (HPI)</label>
+            <textarea id="hpi" placeholder="Detailed history — how complaints started, progression, aggravating & relieving factors…" rows="4"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Associated Symptoms</label>
+            <textarea id="associatedSymptoms" placeholder="Other symptoms reported along with the chief complaint…" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="section-divider">🌙 Lifestyle & Habits</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Diet Type</label>
+            <select id="diet">
+              <option value="">— Select —</option>
+              <option>Vegetarian</option><option>Non-Vegetarian</option><option>Vegan</option><option>Mixed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Appetite</label>
+            <select id="appetite">
+              <option value="">— Select —</option>
+              <option>Good</option><option>Poor</option><option>Excessive</option><option>Variable</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sleep Pattern</label>
+            <select id="sleep">
+              <option value="">— Select —</option>
+              <option>Normal (7–8 hrs)</option>
+              <option>Less (&lt;6 hrs)</option>
+              <option>More (&gt;9 hrs)</option>
+              <option>Disturbed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Bowel Movement</label>
+            <select id="bowel">
+              <option value="">— Select —</option>
+              <option>Regular (1–2/day)</option>
+              <option>Irregular</option>
+              <option>Constipated</option>
+              <option>Loose / Diarrhoea</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Exercise / Physical Activity</label>
+            <select id="exercise">
+              <option value="">— Select —</option>
+              <option>None</option><option>Light (walking)</option>
+              <option>Moderate</option><option>Heavy / Gym</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Habits</label>
+            <input type="text" id="habits" placeholder="e.g. Smoking, Alcohol, Tobacco">
+          </div>
+        </div>
+        <div class="nav-btns">
+          <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+          <button class="btn btn-primary" onclick="goStep(4)">Next: Treatment →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Diagnosis & Treatment -->
+      <div class="form-section" id="sec4">
+        <div class="section-divider">🔬 Examination Findings</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>General Examination</label>
+            <textarea id="genExam" placeholder="General condition, pallor, icterus, cyanosis, clubbing, lymphadenopathy, oedema…" rows="3"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Systemic Examination</label>
+            <textarea id="sysExam" placeholder="CVS, RS, P/A, CNS findings…" rows="3"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Ashtavidha Pariksha (8-fold Examination)</label>
+            <textarea id="ashtavidha" placeholder="Nadi (pulse), Mutra (urine), Mala (stool), Jihva (tongue), Shabda (voice), Sparsha (touch/skin), Drik (eyes), Akriti (appearance)…" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="section-divider">💊 Diagnosis & Treatment Plan</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Provisional Diagnosis / Nidana</label>
+            <textarea id="diagnosis" placeholder="Ayurvedic diagnosis — Vyadhi name, Samprapti (pathogenesis)…" rows="3"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Prescribed Medicines / Aushadha</label>
+            <textarea id="medicines" placeholder="Medicine name, dose, anupana (vehicle), frequency, duration…" rows="4"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Panchakarma / Procedures Advised</label>
+            <textarea id="panchakarma" placeholder="e.g. Abhyanga, Swedana, Vamana, Virechana, Basti, Nasya, Raktamokshana…" rows="3"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Pathya-Apathya (Diet Advice)</label>
+            <textarea id="pathya" placeholder="What to eat / avoid — foods, activities, lifestyle modifications…" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Follow-up Date</label>
+            <input type="date" id="followupDate">
+          </div>
+          <div class="form-group">
+            <label>Visit Type</label>
+            <select id="visitType">
+              <option value="New">New Patient</option>
+              <option value="Follow-up">Follow-up</option>
+              <option value="Emergency">Emergency</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Consultation Fee (₹)</label>
+            <input type="number" id="fee" placeholder="e.g. 300" min="0">
+          </div>
+          <div class="form-group">
+            <label>Payment Status</label>
+            <select id="payStatus">
+              <option value="">— Select —</option>
+              <option>Paid</option><option>Pending</option><option>Waived</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Doctor's Notes / Remarks</label>
+            <textarea id="doctorNotes" placeholder="Additional remarks, prognosis, special instructions…" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div id="formMsg" class="hidden" style="margin-top:8px;"></div>
+        <div class="nav-btns">
+          <button class="btn btn-ghost" onclick="goStep(3)">← Back</button>
+          <button class="btn btn-primary" id="saveBtn" onclick="savePatient()">💾 Save Patient Record</button>
+        </div>
+      </div>
+
+    </div><!-- /card -->
+  </main>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/patients.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+    initNav('add');
+
+    // ── Step navigation ──────────────────────────
+    let currentStep = 1;
+    function goStep(n) {
+      // Validate current before going forward
+      if (n > currentStep && !validateStep(currentStep)) return;
+
+      document.getElementById('sec' + currentStep).classList.remove('active');
+      document.getElementById('step' + currentStep).classList.remove('active');
+      document.getElementById('step' + currentStep).classList.add('done');
+
+      currentStep = n;
+      document.getElementById('sec' + n).classList.add('active');
+
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById('step' + i);
+        el.classList.remove('active');
+        if (i < n)      el.classList.add('done');
+        else if (i > n) el.classList.remove('done');
+      }
+      document.getElementById('step' + n).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validateStep(s) {
+      const showErr = (msg) => {
+        const m = document.getElementById('formMsg');
+        m.textContent = msg; m.className = 'msg-error';
+        m.classList.remove('hidden');
+        setTimeout(() => m.classList.add('hidden'), 3000);
+      };
+      if (s === 1) {
+        if (!document.getElementById('name').value.trim())   { showErr('Patient name is required.'); return false; }
+        if (!document.getElementById('mobile').value.trim() || document.getElementById('mobile').value.length < 10)
+          { showErr('Enter a valid 10-digit mobile number.'); return false; }
+        if (!document.getElementById('age').value)          { showErr('Age is required.'); return false; }
+        if (!document.querySelector('input[name="gender"]:checked')) { showErr('Please select gender.'); return false; }
+      }
+      if (s === 3) {
+        if (!document.getElementById('chiefComplaint').value.trim()) { showErr('Chief complaint is required.'); return false; }
+      }
+      return true;
+    }
+
+    // BMI auto-calc
+    ['height','weight'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        const h = parseFloat(document.getElementById('height').value);
+        const w = parseFloat(document.getElementById('weight').value);
+        if (h > 0 && w > 0) {
+          const bmi = (w / ((h/100) ** 2)).toFixed(1);
+          document.getElementById('bmi').value = bmi;
+        }
+      });
+    });
+
+    // Char count for chief complaint
+    document.getElementById('chiefComplaint').addEventListener('input', function() {
+      document.getElementById('ccCount').textContent = `${this.value.length} / 500`;
+    });
+
+    // Mobile: digits only
+    ['mobile','emergMobile'].forEach(id => {
+      document.getElementById(id).addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g,'').slice(0,10);
+      });
+    });
+
+    // ── Save ────────────────────────────────────
+    function savePatient() {
+      if (!validateStep(4)) return;
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+
+      const gender = document.querySelector('input[name="gender"]:checked');
+      const data = {
+        // Personal
+        name:            document.getElementById('name').value.trim(),
+        mobile:          document.getElementById('mobile').value.trim(),
+        age:             document.getElementById('age').value,
+        dob:             document.getElementById('dob').value,
+        gender:          gender ? gender.value : '',
+        marital:         document.getElementById('marital').value,
+        occupation:      document.getElementById('occupation').value.trim(),
+        religion:        document.getElementById('religion').value.trim(),
+        address:         document.getElementById('address').value.trim(),
+        village:         document.getElementById('village').value.trim(),
+        district:        document.getElementById('district').value.trim(),
+        state:           document.getElementById('state').value.trim(),
+        pin:             document.getElementById('pin').value.trim(),
+        emergName:       document.getElementById('emergName').value.trim(),
+        emergMobile:     document.getElementById('emergMobile').value.trim(),
+        emergRelation:   document.getElementById('emergRelation').value.trim(),
+        referredBy:      document.getElementById('referredBy').value.trim(),
+        // Medical
+        bloodGroup:      document.getElementById('bloodGroup').value,
+        height:          document.getElementById('height').value,
+        weight:          document.getElementById('weight').value,
+        bmi:             document.getElementById('bmi').value,
+        bp:              document.getElementById('bp').value.trim(),
+        pulse:           document.getElementById('pulse').value,
+        temperature:     document.getElementById('temperature').value,
+        spo2:            document.getElementById('spo2').value,
+        rbs:             document.getElementById('rbs').value,
+        diabetes:        document.getElementById('diabetes').value,
+        htn:             document.getElementById('htn').value,
+        allergies:       document.getElementById('allergies').value.trim(),
+        pastHistory:     document.getElementById('pastHistory').value.trim(),
+        familyHistory:   document.getElementById('familyHistory').value.trim(),
+        currentMeds:     document.getElementById('currentMeds').value.trim(),
+        prakriti:        document.getElementById('prakriti').value,
+        vikriti:         document.getElementById('vikriti').value,
+        agni:            document.getElementById('agni').value,
+        koshtha:         document.getElementById('koshtha').value,
+        // Complaints
+        chiefComplaint:       document.getElementById('chiefComplaint').value.trim(),
+        duration:             document.getElementById('duration').value.trim(),
+        onset:                document.getElementById('onset').value,
+        hpi:                  document.getElementById('hpi').value.trim(),
+        associatedSymptoms:   document.getElementById('associatedSymptoms').value.trim(),
+        diet:                 document.getElementById('diet').value,
+        appetite:             document.getElementById('appetite').value,
+        sleep:                document.getElementById('sleep').value,
+        bowel:                document.getElementById('bowel').value,
+        exercise:             document.getElementById('exercise').value,
+        habits:               document.getElementById('habits').value.trim(),
+        // Treatment
+        genExam:         document.getElementById('genExam').value.trim(),
+        sysExam:         document.getElementById('sysExam').value.trim(),
+        ashtavidha:      document.getElementById('ashtavidha').value.trim(),
+        diagnosis:       document.getElementById('diagnosis').value.trim(),
+        medicines:       document.getElementById('medicines').value.trim(),
+        panchakarma:     document.getElementById('panchakarma').value.trim(),
+        pathya:          document.getElementById('pathya').value.trim(),
+        followupDate:    document.getElementById('followupDate').value,
+        visitType:       document.getElementById('visitType').value,
+        fee:             document.getElementById('fee').value,
+        payStatus:       document.getElementById('payStatus').value,
+        doctorNotes:     document.getElementById('doctorNotes').value.trim(),
+      };
+
+      setTimeout(() => {
+        const p = Patients.addPatient(data);
+        window.location.href = 'patient-detail.html?id=' + encodeURIComponent(p.id) + '&new=1';
+      }, 300);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Search Patient — Ayushman Patient Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .big-search {
+      display: flex; gap: 10px; align-items: center;
+      background: var(--surface); border: 2px solid var(--primary);
+      border-radius: 12px; padding: 12px 18px;
+      box-shadow: 0 4px 20px rgba(35,65,35,0.12);
+      margin-bottom: 24px;
+    }
+    .big-search input {
+      border: none; background: none; font-size: 1.1rem;
+      padding: 0; flex: 1; color: var(--text);
+      box-shadow: none;
+    }
+    .big-search input:focus { box-shadow: none; border: none; }
+    .big-search .icon { font-size: 1.3rem; color: var(--primary); }
+    .result-count { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger-btn" id="hamburgerBtn"><span></span><span></span><span></span></button>
+      <span class="topbar-title" id="topbarTitle">Ayushman</span>
+    </div>
+    <span class="topbar-user" id="topbarUser"></span>
+  </header>
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <nav class="drawer" id="drawerNav"></nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>🔍 Search Patient</h1>
+      <p>Find patients by name, mobile number, patient ID, or village</p>
+    </div>
+
+    <div class="big-search">
+      <span class="icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Type name, mobile, ID or village…" autofocus autocomplete="off">
+      <button class="btn btn-ghost btn-sm" id="clearBtn" style="display:none;" onclick="clearSearch()">✕ Clear</button>
+    </div>
+
+    <div class="result-count" id="resultCount"></div>
+    <div id="results"></div>
+  </main>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/patients.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+    initNav('search');
+
+    const input = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearBtn');
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      clearBtn.style.display = q ? '' : 'none';
+      search(q);
+    });
+
+    function clearSearch() {
+      input.value = '';
+      clearBtn.style.display = 'none';
+      document.getElementById('resultCount').textContent = '';
+      document.getElementById('results').innerHTML = '';
+      input.focus();
+    }
+
+    function highlight(text, q) {
+      if (!q || !text) return escHtml(text || '—');
+      const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+      return escHtml(text).replace(re, '<mark style="background:var(--accent-light);border-radius:3px;padding:0 2px;">$1</mark>');
+    }
+
+    function search(q) {
+      const rc = document.getElementById('resultCount');
+      const rs = document.getElementById('results');
+
+      if (!q) { rc.textContent = ''; rs.innerHTML = ''; return; }
+
+      const list = Patients.searchPatients(q);
+      rc.textContent = `${list.length} result${list.length !== 1 ? 's' : ''} for "${q}"`;
+
+      if (!list.length) {
+        rs.innerHTML = `<div class="empty-state"><div class="empty-icon">🌱</div>
+          <p>No patients found for "<strong>${escHtml(q)}</strong>"</p>
+          <a href="add-patient.html" style="color:var(--primary);font-weight:600;display:inline-block;margin-top:10px;">+ Add new patient</a></div>`;
+        return;
+      }
+
+      rs.innerHTML = `<div class="patient-grid">
+        ${list.map(p => `
+          <div class="patient-card" onclick="window.location.href='patient-detail.html?id=${encodeURIComponent(p.id)}'">
+            <div class="patient-card-header">
+              <div class="patient-avatar">${p.name ? p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '?'}</div>
+              <div>
+                <div class="patient-name">${highlight(p.name, q)}</div>
+                <div class="patient-id">${highlight(p.id, q)}</div>
+              </div>
+            </div>
+            <div class="patient-info">
+              <span>📱 ${highlight(p.mobile||'No mobile', q)}</span>
+              ${p.age    ? `<span>🎂 ${p.age} yrs</span>` : ''}
+              ${p.gender ? `<span>${p.gender==='Female'?'♀':'♂'} ${p.gender}</span>` : ''}
+              ${p.bloodGroup ? `<span>🩸 ${p.bloodGroup}</span>` : ''}
+              ${p.village ? `<span>📍 ${highlight(p.village, q)}</span>` : ''}
+            </div>
+            ${p.chiefComplaint ? `
+              <div style="margin-top:8px;font-size:0.8rem;color:var(--muted);line-height:1.4;">
+                💬 ${escHtml(p.chiefComplaint.slice(0,70))}${p.chiefComplaint.length>70?'…':''}
+              </div>` : ''}
+            <div class="patient-card-actions">
+              <a href="patient-detail.html?id=${encodeURIComponent(p.id)}" class="btn btn-primary btn-sm">View Details</a>
+              <span style="font-size:0.75rem;color:var(--muted);align-self:center;">${new Date(p.createdAt).toLocaleDateString('en-IN')}</span>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }
+  </script>
+</body>
+</html>

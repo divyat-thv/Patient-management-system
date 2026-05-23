@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Patient Detail — Ayushman Patient Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .detail-header {
+      display: flex; align-items: center; gap: 18px;
+      padding: 22px 26px; background: var(--surface);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .detail-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--primary-light); color: var(--primary);
+      font-size: 1.8rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 3px solid var(--accent);
+    }
+    .detail-info { flex: 1; min-width: 180px; }
+    .detail-name { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+    .detail-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+    .detail-meta span { font-size: 0.82rem; color: var(--muted); background: var(--bg); padding: 3px 10px; border-radius: 99px; }
+    .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+
+    .info-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .info-sections { grid-template-columns: 1fr; } }
+
+    .info-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; }
+    .info-card-title {
+      font-size: 0.76rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.09em; color: var(--primary);
+      background: var(--primary-light); padding: 5px 12px;
+      border-radius: 6px; margin-bottom: 14px;
+      display: inline-block;
+    }
+    .info-row { display: flex; gap: 6px; margin-bottom: 9px; }
+    .info-label {
+      font-size: 0.78rem; font-weight: 600; color: var(--muted);
+      min-width: 130px; flex-shrink: 0;
+    }
+    .info-value { font-size: 0.88rem; color: var(--text); font-weight: 500; word-break: break-word; }
+    .info-value.long { white-space: pre-wrap; line-height: 1.5; }
+    .info-value.em { color: var(--primary); font-weight: 700; }
+
+    .full-section { grid-column: 1 / -1; }
+    .print-btn { display: none; }
+    @media print {
+      .topbar, .drawer, .drawer-overlay, .detail-actions, .print-btn, nav { display: none !important; }
+      .main-content { padding: 0 !important; }
+      body { background: #fff !important; }
+      .info-sections { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: var(--primary); color: #fff;
+      padding: 12px 22px; border-radius: 10px;
+      font-size: 0.9rem; font-weight: 600;
+      box-shadow: 0 6px 20px rgba(35,65,35,0.3);
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { opacity:0; transform: translateY(20px); } }
+
+    /* Edit mode */
+    .edit-mode input, .edit-mode select, .edit-mode textarea {
+      border: 1.5px solid var(--accent) !important;
+      background: #fff !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger-btn" id="hamburgerBtn"><span></span><span></span><span></span></button>
+      <span class="topbar-title" id="topbarTitle">Ayushman</span>
+    </div>
+    <span class="topbar-user" id="topbarUser"></span>
+  </header>
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <nav class="drawer" id="drawerNav"></nav>
+
+  <main class="main-content" id="mainContent">
+    <div id="loadingState" style="text-align:center;padding:60px 0;color:var(--muted);">Loading patient…</div>
+  </main>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/patients.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+    initNav('patients');
+
+    const params = new URLSearchParams(location.search);
+    const patId  = params.get('id');
+    const isNew  = params.get('new') === '1';
+
+    if (!patId) { window.location.href = 'all-patients.html'; }
+
+    let patient = Patients.getPatient(patId);
+    if (!patient) {
+      document.getElementById('mainContent').innerHTML =
+        `<div class="empty-state"><div class="empty-icon">❌</div><p>Patient not found.</p>
+         <a href="all-patients.html" class="btn btn-outline" style="margin-top:12px;">← Back to list</a></div>`;
+    } else {
+      renderDetail(patient);
+      if (isNew) showToast('✅ Patient record saved successfully!');
+    }
+
+    function val(v) { return v && String(v).trim() ? escHtml(String(v)) : '<span style="color:#ccc;">—</span>'; }
+    function valLong(v) { return v && String(v).trim() ? `<span class="info-value long">${escHtml(String(v))}</span>` : '<span style="color:#ccc;">—</span>'; }
+
+    function renderDetail(p) {
+      const initials = p.name ? p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '?';
+      document.title = `${p.name} — Ayushman`;
+
+      document.getElementById('mainContent').innerHTML = `
+        <!-- Back link -->
+        <div style="margin-bottom:14px;">
+          <a href="all-patients.html" style="font-size:0.88rem;color:var(--primary);font-weight:600;">← All Patients</a>
+        </div>
+
+        <!-- Patient Header -->
+        <div class="detail-header">
+          <div class="detail-avatar">${initials}</div>
+          <div class="detail-info">
+            <div class="detail-name">${escHtml(p.name)}</div>
+            <div class="detail-meta">
+              <span>🆔 ${escHtml(p.id)}</span>
+              ${p.age    ? `<span>🎂 ${escHtml(p.age)} yrs</span>` : ''}
+              ${p.gender ? `<span>${p.gender==='Female'?'♀':'♂'} ${escHtml(p.gender)}</span>` : ''}
+              ${p.mobile ? `<span>📱 ${escHtml(p.mobile)}</span>` : ''}
+              ${p.bloodGroup ? `<span>🩸 ${escHtml(p.bloodGroup)}</span>` : ''}
+              ${p.visitType  ? `<span class="badge ${p.visitType==='New'?'badge-green':p.visitType==='Emergency'?'badge-pink':'badge-blue'}">${escHtml(p.visitType)}</span>` : ''}
+            </div>
+          </div>
+          <div class="detail-actions">
+            <button class="btn btn-outline btn-sm" onclick="window.print()">🖨️ Print</button>
+            <button class="btn btn-primary btn-sm" onclick="window.location.href='add-patient.html'">➕ New Patient</button>
+            <button class="btn btn-danger btn-sm" onclick="deletePatient()">🗑️ Delete</button>
+          </div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-sections">
+
+          <!-- 1. Personal -->
+          <div class="info-card">
+            <div class="info-card-title">👤 Personal Information</div>
+            ${row('Name',            p.name)}
+            ${row('Patient ID',      p.id)}
+            ${row('Mobile',          p.mobile)}
+            ${row('Age',             p.age ? p.age + ' years' : '')}
+            ${row('Date of Birth',   p.dob)}
+            ${row('Gender',          p.gender)}
+            ${row('Marital Status',  p.marital)}
+            ${row('Occupation',      p.occupation)}
+            ${row('Religion',        p.religion)}
+            ${row('Referred By',     p.referredBy)}
+            ${row('Registered On',   new Date(p.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}))}
+          </div>
+
+          <!-- 2. Address -->
+          <div class="info-card">
+            <div class="info-card-title">📍 Address & Contact</div>
+            ${row('Address',          p.address)}
+            ${row('Village / Area',   p.village)}
+            ${row('District',         p.district)}
+            ${row('State',            p.state)}
+            ${row('PIN Code',         p.pin)}
+            <div style="height:10px;border-top:1px solid var(--border);margin:12px 0;"></div>
+            <div class="info-card-title" style="margin-bottom:10px;">🚨 Emergency Contact</div>
+            ${row('Name',             p.emergName)}
+            ${row('Mobile',           p.emergMobile)}
+            ${row('Relation',         p.emergRelation)}
+          </div>
+
+          <!-- 3. Vitals -->
+          <div class="info-card">
+            <div class="info-card-title">🩺 Vitals & Measurements</div>
+            ${row('Blood Group',      p.bloodGroup)}
+            ${row('Height',           p.height ? p.height + ' cm' : '')}
+            ${row('Weight',           p.weight ? p.weight + ' kg' : '')}
+            ${row('BMI',              p.bmi)}
+            ${row('Blood Pressure',   p.bp ? p.bp + ' mmHg' : '')}
+            ${row('Pulse Rate',       p.pulse ? p.pulse + ' bpm' : '')}
+            ${row('Temperature',      p.temperature ? p.temperature + ' °F' : '')}
+            ${row('SpO2',             p.spo2 ? p.spo2 + '%' : '')}
+            ${row('Blood Sugar (RBS)',p.rbs ? p.rbs + ' mg/dL' : '')}
+            ${row('Diabetes',         p.diabetes)}
+            ${row('Hypertension',     p.htn)}
+            ${row('Allergies',        p.allergies)}
+          </div>
+
+          <!-- 4. Ayurvedic -->
+          <div class="info-card">
+            <div class="info-card-title">🌿 Ayurvedic Assessment</div>
+            ${row('Prakriti',         p.prakriti)}
+            ${row('Vikriti',          p.vikriti)}
+            ${row('Agni (Digestive)', p.agni)}
+            ${row('Koshtha (Bowel)',  p.koshtha)}
+            <div style="height:10px;border-top:1px solid var(--border);margin:12px 0;"></div>
+            <div class="info-card-title" style="margin-bottom:10px;">🌙 Lifestyle</div>
+            ${row('Diet Type',        p.diet)}
+            ${row('Appetite',         p.appetite)}
+            ${row('Sleep',            p.sleep)}
+            ${row('Bowel Movement',   p.bowel)}
+            ${row('Exercise',         p.exercise)}
+            ${row('Habits',           p.habits)}
+          </div>
+
+          <!-- 5. Chief Complaints (full width) -->
+          <div class="info-card full-section">
+            <div class="info-card-title">📋 Chief Complaints & History</div>
+            <div class="info-row"><div class="info-label">Chief Complaint</div>${valLong(p.chiefComplaint)}</div>
+            ${row('Duration',         p.duration)}
+            ${row('Onset',            p.onset)}
+            <div class="info-row"><div class="info-label">History of Present Illness</div>${valLong(p.hpi)}</div>
+            <div class="info-row"><div class="info-label">Associated Symptoms</div>${valLong(p.associatedSymptoms)}</div>
+            <div class="info-row"><div class="info-label">Past Medical History</div>${valLong(p.pastHistory)}</div>
+            <div class="info-row"><div class="info-label">Family History</div>${valLong(p.familyHistory)}</div>
+            <div class="info-row"><div class="info-label">Current Medications</div>${valLong(p.currentMeds)}</div>
+          </div>
+
+          <!-- 6. Examination (full width) -->
+          <div class="info-card full-section">
+            <div class="info-card-title">🔬 Examination Findings</div>
+            <div class="info-row"><div class="info-label">General Examination</div>${valLong(p.genExam)}</div>
+            <div class="info-row"><div class="info-label">Systemic Examination</div>${valLong(p.sysExam)}</div>
+            <div class="info-row"><div class="info-label">Ashtavidha Pariksha</div>${valLong(p.ashtavidha)}</div>
+          </div>
+
+          <!-- 7. Treatment (full width) -->
+          <div class="info-card full-section">
+            <div class="info-card-title">💊 Diagnosis & Treatment Plan</div>
+            <div class="info-row"><div class="info-label">Diagnosis / Nidana</div>${valLong(p.diagnosis)}</div>
+            <div class="info-row"><div class="info-label">Prescribed Medicines</div>${valLong(p.medicines)}</div>
+            <div class="info-row"><div class="info-label">Panchakarma Advised</div>${valLong(p.panchakarma)}</div>
+            <div class="info-row"><div class="info-label">Pathya-Apathya</div>${valLong(p.pathya)}</div>
+            ${row('Follow-up Date',   p.followupDate ? new Date(p.followupDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '')}
+            ${row('Consultation Fee', p.fee ? '₹' + p.fee : '')}
+            ${row('Payment Status',   p.payStatus)}
+            <div class="info-row"><div class="info-label">Doctor's Notes</div>${valLong(p.doctorNotes)}</div>
+          </div>
+
+        </div><!-- /info-sections -->
+
+        <div style="text-align:center;padding:20px 0;color:var(--muted);font-size:0.8rem;">
+          Record last updated: ${new Date(p.updatedAt || p.createdAt).toLocaleString('en-IN')}
+        </div>
+      `;
+    }
+
+    function row(label, value) {
+      const v = value && String(value).trim() ? `<span class="info-value">${escHtml(String(value))}</span>` : `<span style="color:#ccc;font-size:0.85rem;">—</span>`;
+      return `<div class="info-row"><div class="info-label">${escHtml(label)}</div>${v}</div>`;
+    }
+
+    function deletePatient() {
+      if (confirm(`Delete patient "${patient.name}" (${patient.id})?\nThis cannot be undone.`)) {
+        Patients.deletePatient(patient.id);
+        window.location.href = 'all-patients.html';
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.className = 'toast'; t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    }
+  </script>
+</body>
+</html>
